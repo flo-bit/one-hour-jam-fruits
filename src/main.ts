@@ -632,10 +632,7 @@ window.addEventListener('resize', resize);
 async function setup() {
   // Load audio files
   loadAudio();
-  
-  // Add test audio button
-  testAudio();
-  
+    
   // Create the main menu
   createMainMenu();
 }
