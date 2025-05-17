@@ -11,9 +11,15 @@ let score1 = 0;
 let score2 = 0;
 
 // Game state
-let gameTime = 10; // 60 seconds game duration
-let gameActive = true;
+let gameTime = 10; // 10 seconds game duration
+let gameActive = false;
 let timerInterval: number;
+let gameInitialized = false;
+
+// Audio elements
+let backgroundMusic: HTMLAudioElement;
+let pointSound: HTMLAudioElement;
+let failSound: HTMLAudioElement;
 
 // List of emojis to randomly use
 const fruitEmojis = ["🍎", "🍐", "🍊", "🍋"];
@@ -22,10 +28,125 @@ const fruitEmojis = ["🍎", "🍐", "🍊", "🍋"];
 const player1Fruit = "🍎"; // Red apple for player 1
 const player2Fruit = "🍊"; // Orange for player 2
 
+// Load audio files
+function loadAudio() {
+  // Background music
+  backgroundMusic = new Audio('jingle.m4a');
+  backgroundMusic.loop = true;
+  backgroundMusic.volume = 0.5;
+  
+  // Point sound
+  pointSound = new Audio('point.m4a');
+  pointSound.volume = 0.7;
+  
+  // Fail sound
+  failSound = new Audio('fail.m4a');
+  failSound.volume = 0.7;
+}
+
+// Play a sound effect
+function playSound(sound: HTMLAudioElement) {
+  // Reset and play the sound
+  sound.currentTime = 0;
+  sound.play().catch(error => {
+    console.error("Audio playback error:", error);
+  });
+}
+
+// Create the main menu
+function createMainMenu() {
+  // Create menu container
+  const menuContainer = document.createElement('div');
+  menuContainer.id = 'main-menu';
+  menuContainer.style.position = 'absolute';
+  menuContainer.style.top = '0';
+  menuContainer.style.left = '0';
+  menuContainer.style.width = '100%';
+  menuContainer.style.height = '100%';
+  menuContainer.style.display = 'flex';
+  menuContainer.style.flexDirection = 'column';
+  menuContainer.style.justifyContent = 'center';
+  menuContainer.style.alignItems = 'center';
+  menuContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+  menuContainer.style.zIndex = '10';
+  
+  // Create title
+  const title = document.createElement('h1');
+  title.textContent = 'Fruit Catcher';
+  title.style.color = '#FFFFFF';
+  title.style.fontSize = '48px';
+  title.style.marginBottom = '20px';
+  title.style.fontFamily = 'Arial, sans-serif';
+  
+  // Create subtitle
+  const subtitle = document.createElement('div');
+  subtitle.style.color = '#FFFFFF';
+  subtitle.style.fontSize = '24px';
+  subtitle.style.marginBottom = '40px';
+  subtitle.style.textAlign = 'center';
+  subtitle.style.maxWidth = '600px';
+  subtitle.style.lineHeight = '1.5';
+  subtitle.innerHTML = `
+    <div><span style="color:#FF5555;">Player 1:</span> Use A/D keys to catch ${player1Fruit}</div>
+    <div><span style="color:#FFFF55;">Player 2:</span> Use Arrow keys to catch ${player2Fruit}</div>
+    <div style="margin-top:10px;">Catch your fruit for +1 point, other fruits -1 point!</div>
+  `;
+  
+  // Create start button
+  const startButton = document.createElement('button');
+  startButton.textContent = 'Start Game';
+  startButton.style.padding = '15px 40px';
+  startButton.style.fontSize = '24px';
+  startButton.style.backgroundColor = '#4CAF50';
+  startButton.style.color = 'white';
+  startButton.style.border = 'none';
+  startButton.style.borderRadius = '5px';
+  startButton.style.cursor = 'pointer';
+  startButton.style.transition = 'all 0.2s';
+  
+  // Hover effect
+  startButton.addEventListener('mouseover', () => {
+    startButton.style.backgroundColor = '#45a049';
+    startButton.style.transform = 'scale(1.05)';
+  });
+  
+  startButton.addEventListener('mouseout', () => {
+    startButton.style.backgroundColor = '#4CAF50';
+    startButton.style.transform = 'scale(1)';
+  });
+  
+  // Click event to start the game
+  startButton.addEventListener('click', () => {
+    // Hide menu
+    menuContainer.style.display = 'none';
+    
+    // Start background music
+    backgroundMusic.play().catch(error => {
+      console.error("Background music playback error:", error);
+    });
+    
+    // Start game
+    if (!gameInitialized) {
+      initializeGame();
+    } else {
+      resetGame();
+    }
+  });
+  
+  // Add elements to menu
+  menuContainer.appendChild(title);
+  menuContainer.appendChild(subtitle);
+  menuContainer.appendChild(startButton);
+  
+  // Add menu to document
+  document.body.appendChild(menuContainer);
+}
+
 // Create HTML UI elements
 function createUIElements() {
   // Create score container
   const scoreContainer = document.createElement('div');
+  scoreContainer.id = 'score-container';
   scoreContainer.style.position = 'absolute';
   scoreContainer.style.top = '10px';
   scoreContainer.style.left = '0';
@@ -80,6 +201,7 @@ function createUIElements() {
   winnerContainer.style.fontWeight = 'bold';
   winnerContainer.style.textAlign = 'center';
   winnerContainer.style.display = 'none';
+  winnerContainer.style.zIndex = '20';
   
   document.body.appendChild(winnerContainer);
 }
@@ -102,6 +224,7 @@ function updateTimer() {
 
 // Start game timer
 function startGameTimer() {
+  gameActive = true;
   timerInterval = window.setInterval(() => {
     gameTime--;
     updateTimer();
@@ -112,10 +235,37 @@ function startGameTimer() {
   }, 1000);
 }
 
+// Reset the game
+function resetGame() {
+  // Reset scores
+  score1 = 0;
+  score2 = 0;
+  updateScores();
+  
+  // Reset timer
+  gameTime = 10;
+  updateTimer();
+  
+  // Reposition players
+  player1.container.x = -150;
+  player2.container.x = 150;
+  
+  // Clear any existing particles
+  for (let i = particles.particles.length - 1; i >= 0; i--) {
+    particles.removeParticle(particles.particles[i]);
+  }
+  
+  // Restart the game
+  startGameTimer();
+}
+
 // End the game and show the winner
 function endGame() {
   gameActive = false;
   clearInterval(timerInterval);
+  
+  // Pause background music
+  backgroundMusic.pause();
   
   const winnerContainer = document.getElementById('winner-container');
   if (winnerContainer) {
@@ -148,14 +298,44 @@ function endGame() {
     restartButton.style.cursor = 'pointer';
     
     restartButton.addEventListener('click', () => {
-      location.reload();
+      winnerContainer.style.display = 'none';
+      resetGame();
+      
+      // Restart background music
+      backgroundMusic.currentTime = 0;
+      backgroundMusic.play().catch(error => {
+        console.error("Background music playback error:", error);
+      });
     });
     
     winnerContainer.appendChild(restartButton);
+    
+    // Add main menu button
+    const menuButton = document.createElement('button');
+    menuButton.textContent = 'Main Menu';
+    menuButton.style.marginTop = '20px';
+    menuButton.style.marginLeft = '10px';
+    menuButton.style.padding = '10px 20px';
+    menuButton.style.fontSize = '20px';
+    menuButton.style.backgroundColor = '#3498db';
+    menuButton.style.border = 'none';
+    menuButton.style.borderRadius = '5px';
+    menuButton.style.color = 'white';
+    menuButton.style.cursor = 'pointer';
+    
+    menuButton.addEventListener('click', () => {
+      winnerContainer.style.display = 'none';
+      const menuElement = document.getElementById('main-menu');
+      if (menuElement) menuElement.style.display = 'flex';
+    });
+    
+    winnerContainer.appendChild(menuButton);
   }
 }
 
-async function setup() {
+async function initializeGame() {
+  gameInitialized = true;
+  
   // Create UI elements
   createUIElements();
   
@@ -320,8 +500,11 @@ function checkPlayerFruitCollisions(player: Player, playerNumber: number, target
             score2++;
           }
           
+          // Play point sound
+          playSound(pointSound);
+          
           // Create a positive celebration effect
-          // createCelebrationEffect(particle.x, particle.y, 0x00FF00, "✨");
+          createCelebrationEffect(particle.x, particle.y, 0x00FF00, "✨");
         } else {
           // Decrease score for catching wrong fruit
           if (playerNumber === 1) {
@@ -330,8 +513,11 @@ function checkPlayerFruitCollisions(player: Player, playerNumber: number, target
             score2--;
           }
           
+          // Play fail sound
+          playSound(failSound);
+          
           // Create a negative effect
-          // createCelebrationEffect(particle.x, particle.y, 0xFF0000, "❌");
+          createCelebrationEffect(particle.x, particle.y, 0xFF0000, "❌");
         }
         
         // Update HTML score display
@@ -346,7 +532,7 @@ function checkPlayerFruitCollisions(player: Player, playerNumber: number, target
 }
 
 function createCelebrationEffect(x: number, y: number, color: number, emoji: string) {
-  for (let j = 0; j < 5; j++) {
+  for (let j = 0; j < 3; j++) {
     particles.spawnParticle({
       x: x,
       y: y,
@@ -374,5 +560,14 @@ function resize() {
 
 // Add resize event listener
 window.addEventListener('resize', resize);
+
+// Initialize the application
+async function setup() {
+  // Load audio files
+  loadAudio();
+  
+  // Create the main menu
+  createMainMenu();
+}
 
 setup();
