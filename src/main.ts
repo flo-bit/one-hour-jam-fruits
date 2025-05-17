@@ -9,17 +9,64 @@ let player1: Player;
 let player2: Player;
 let score1 = 0;
 let score2 = 0;
-let scoreText1: PIXI.Text;
-let scoreText2: PIXI.Text;
 
 // List of emojis to randomly use
-const fruitEmojis = ["🍎", "🍐", "🍊", "🍋", "🍇", "🍓", "🫐"];
+const fruitEmojis = ["🍎", "🍐", "🍊", "🍋"];
 
 // Assign specific fruits to each player
 const player1Fruit = "🍎"; // Red apple for player 1
-const player2Fruit = "🍊"; // Banana for player 2
+const player2Fruit = "🍊"; // Orange for player 2
+
+// Create HTML score elements
+function createScoreElements() {
+  // Create score container
+  const scoreContainer = document.createElement('div');
+  scoreContainer.style.position = 'absolute';
+  scoreContainer.style.top = '10px';
+  scoreContainer.style.left = '0';
+  scoreContainer.style.width = '100%';
+  scoreContainer.style.display = 'flex';
+  scoreContainer.style.justifyContent = 'space-between';
+  scoreContainer.style.padding = '0 20px';
+  scoreContainer.style.boxSizing = 'border-box';
+  scoreContainer.style.pointerEvents = 'none';
+  scoreContainer.style.fontFamily = 'Arial, sans-serif';
+  scoreContainer.style.fontSize = '24px';
+  scoreContainer.style.fontWeight = 'bold';
+  
+  // Create player 1 score
+  const p1Score = document.createElement('div');
+  p1Score.id = 'player1-score';
+  p1Score.style.color = '#FF5555';
+  p1Score.textContent = `Player 1: 0`;
+  
+  // Create player 2 score
+  const p2Score = document.createElement('div');
+  p2Score.id = 'player2-score';
+  p2Score.style.color = '#FFFF55';
+  p2Score.textContent = `Player 2: 0`;
+  
+  // Add scores to container
+  scoreContainer.appendChild(p1Score);
+  scoreContainer.appendChild(p2Score);
+  
+  // Add container to document
+  document.body.appendChild(scoreContainer);
+}
+
+// Update score displays
+function updateScores() {
+  const p1ScoreElement = document.getElementById('player1-score');
+  const p2ScoreElement = document.getElementById('player2-score');
+  
+  if (p1ScoreElement) p1ScoreElement.textContent = `Player 1: ${score1}`;
+  if (p2ScoreElement) p2ScoreElement.textContent = `Player 2: ${score2}`;
+}
 
 async function setup() {
+  // Create score elements
+  createScoreElements();
+  
   // Create the application
   app = new PIXI.Application();
   await app.init({
@@ -77,27 +124,26 @@ async function setup() {
     }
   });
   
+  // Add target fruit indicators next to players
+  const player1FruitText = new PIXI.Text(player1Fruit, {
+    fontSize: 24
+  });
+  player1FruitText.anchor.set(0.5);
+  player1FruitText.x = -30;
+  player1FruitText.y = -20;
+  player1.container.addChild(player1FruitText);
+  
+  const player2FruitText = new PIXI.Text(player2Fruit, {
+    fontSize: 24
+  });
+  player2FruitText.anchor.set(0.5);
+  player2FruitText.x = -30;
+  player2FruitText.y = -20;
+  player2.container.addChild(player2FruitText);
+  
   container.addChild(player1.container);
   container.addChild(player2.container);
   
-  // Create score text for player 1
-  scoreText1 = new PIXI.Text(`Player 1: 0 ${player1Fruit}`, {
-    fontSize: 24,
-    fill: 0xFF5555
-  });
-  scoreText1.x = -340;
-  scoreText1.y = -190;
-  container.addChild(scoreText1);
-  
-  // Create score text for player 2
-  scoreText2 = new PIXI.Text(`Player 2: 0 ${player2Fruit}`, {
-    fontSize: 24,
-    fill: 0xFFFF55
-  });
-  scoreText2.x = 100;
-  scoreText2.y = -190;
-  container.addChild(scoreText2);
-
   // Instructions text
   const instructionsText = new PIXI.Text("Player 1: A/D keys | Player 2: ←/→ keys", {
     fontSize: 16,
@@ -126,7 +172,7 @@ async function setup() {
         x: Math.random() * 700 - 350,
         y: -200,
         size: 20,
-        speedX: Math.random() * 10 - 5,
+        speedX: Math.random() * 50 - 25,
         speedY: 100 + Math.random() * 50,
         emoji: randomEmoji
       });
@@ -161,27 +207,26 @@ function checkPlayerFruitCollisions(player: Player, playerNumber: number, target
           // Increase score for catching target fruit
           if (playerNumber === 1) {
             score1++;
-            scoreText1.text = `Player 1: ${score1} ${player1Fruit}`;
           } else {
             score2++;
-            scoreText2.text = `Player 2: ${score2} ${player2Fruit}`;
           }
           
           // Create a positive celebration effect
-          createCelebrationEffect(particle.x, particle.y, 0x00FF00, "✨");
+          // createCelebrationEffect(particle.x, particle.y, 0x00FF00, "✨");
         } else {
           // Decrease score for catching wrong fruit
           if (playerNumber === 1) {
             score1--;
-            scoreText1.text = `Player 1: ${score1} ${player1Fruit}`;
           } else {
             score2--;
-            scoreText2.text = `Player 2: ${score2} ${player2Fruit}`;
           }
           
           // Create a negative effect
-          createCelebrationEffect(particle.x, particle.y, 0xFF0000, "❌");
+          // createCelebrationEffect(particle.x, particle.y, 0xFF0000, "❌");
         }
+        
+        // Update HTML score display
+        updateScores();
         
         // Remove the fruit
         particles.removeParticle(particle);
