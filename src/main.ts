@@ -36,20 +36,23 @@ function loadAudio() {
   
   console.log("Loading audio files...");
   
+  // Get the base URL
+  const baseUrl = import.meta.env.BASE_URL || '/';
+  
   // Background music
   backgroundMusic = new Audio();
-  backgroundMusic.src = 'jingle.m4a';
+  backgroundMusic.src = `${baseUrl}jingle.m4a`;
   backgroundMusic.loop = true;
   backgroundMusic.volume = 0.5;
   
   // Point sound
   pointSound = new Audio();
-  pointSound.src = 'point.m4a';
+  pointSound.src = `${baseUrl}point.m4a`;
   pointSound.volume = 0.7;
   
   // Fail sound
   failSound = new Audio();
-  failSound.src = 'fail.m4a';
+  failSound.src = `${baseUrl}fail.m4a`;
   failSound.volume = 0.7;
   
   // Pre-load audio files
@@ -423,8 +426,11 @@ async function initializeGame() {
   background.rect(-350, -200, 700, 400).fill({ color: 0x515151, alpha: 1 });
   container.addChild(background);
   
+  // Get the base URL for assets
+  const baseUrl = import.meta.env.BASE_URL || '/';
+  
   // Load tree texture
-  const treeTexture = await PIXI.Assets.load('tree.png');
+  const treeTexture = await PIXI.Assets.load(`${baseUrl}tree.png`);
   
   // Create and position trees
   const trees = [];
