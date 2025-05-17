@@ -10,6 +10,11 @@ let player2: Player;
 let score1 = 0;
 let score2 = 0;
 
+// Game state
+let gameTime = 10; // 60 seconds game duration
+let gameActive = true;
+let timerInterval: number;
+
 // List of emojis to randomly use
 const fruitEmojis = ["🍎", "🍐", "🍊", "🍋"];
 
@@ -17,8 +22,8 @@ const fruitEmojis = ["🍎", "🍐", "🍊", "🍋"];
 const player1Fruit = "🍎"; // Red apple for player 1
 const player2Fruit = "🍊"; // Orange for player 2
 
-// Create HTML score elements
-function createScoreElements() {
+// Create HTML UI elements
+function createUIElements() {
   // Create score container
   const scoreContainer = document.createElement('div');
   scoreContainer.style.position = 'absolute';
@@ -40,18 +45,43 @@ function createScoreElements() {
   p1Score.style.color = '#FF5555';
   p1Score.textContent = `Player 1: 0`;
   
+  // Create timer
+  const timer = document.createElement('div');
+  timer.id = 'game-timer';
+  timer.style.color = '#FFFFFF';
+  timer.textContent = `Time: ${gameTime}`;
+  
   // Create player 2 score
   const p2Score = document.createElement('div');
   p2Score.id = 'player2-score';
   p2Score.style.color = '#FFFF55';
   p2Score.textContent = `Player 2: 0`;
   
-  // Add scores to container
+  // Add elements to container
   scoreContainer.appendChild(p1Score);
+  scoreContainer.appendChild(timer);
   scoreContainer.appendChild(p2Score);
   
   // Add container to document
   document.body.appendChild(scoreContainer);
+  
+  // Create winner announcement container (hidden initially)
+  const winnerContainer = document.createElement('div');
+  winnerContainer.id = 'winner-container';
+  winnerContainer.style.position = 'absolute';
+  winnerContainer.style.top = '50%';
+  winnerContainer.style.left = '50%';
+  winnerContainer.style.transform = 'translate(-50%, -50%)';
+  winnerContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+  winnerContainer.style.color = '#FFFFFF';
+  winnerContainer.style.padding = '20px 40px';
+  winnerContainer.style.borderRadius = '10px';
+  winnerContainer.style.fontSize = '36px';
+  winnerContainer.style.fontWeight = 'bold';
+  winnerContainer.style.textAlign = 'center';
+  winnerContainer.style.display = 'none';
+  
+  document.body.appendChild(winnerContainer);
 }
 
 // Update score displays
@@ -63,9 +93,71 @@ function updateScores() {
   if (p2ScoreElement) p2ScoreElement.textContent = `Player 2: ${score2}`;
 }
 
+// Update timer display
+function updateTimer() {
+  const timerElement = document.getElementById('game-timer');
+  
+  if (timerElement) timerElement.textContent = `Time: ${gameTime}`;
+}
+
+// Start game timer
+function startGameTimer() {
+  timerInterval = window.setInterval(() => {
+    gameTime--;
+    updateTimer();
+    
+    if (gameTime <= 0) {
+      endGame();
+    }
+  }, 1000);
+}
+
+// End the game and show the winner
+function endGame() {
+  gameActive = false;
+  clearInterval(timerInterval);
+  
+  const winnerContainer = document.getElementById('winner-container');
+  if (winnerContainer) {
+    let message;
+    
+    if (score1 > score2) {
+      message = 'Player 1 Wins! 🎉';
+      winnerContainer.style.color = '#FF5555';
+    } else if (score2 > score1) {
+      message = 'Player 2 Wins! 🎉';
+      winnerContainer.style.color = '#FFFF55';
+    } else {
+      message = "It's a Tie!";
+      winnerContainer.style.color = '#FFFFFF';
+    }
+    
+    winnerContainer.textContent = message;
+    winnerContainer.style.display = 'block';
+    
+    // Add restart button
+    const restartButton = document.createElement('button');
+    restartButton.textContent = 'Play Again';
+    restartButton.style.marginTop = '20px';
+    restartButton.style.padding = '10px 20px';
+    restartButton.style.fontSize = '20px';
+    restartButton.style.backgroundColor = '#4CAF50';
+    restartButton.style.border = 'none';
+    restartButton.style.borderRadius = '5px';
+    restartButton.style.color = 'white';
+    restartButton.style.cursor = 'pointer';
+    
+    restartButton.addEventListener('click', () => {
+      location.reload();
+    });
+    
+    winnerContainer.appendChild(restartButton);
+  }
+}
+
 async function setup() {
-  // Create score elements
-  createScoreElements();
+  // Create UI elements
+  createUIElements();
   
   // Create the application
   app = new PIXI.Application();
@@ -164,19 +256,15 @@ async function setup() {
   
   container.addChild(player1.container);
   container.addChild(player2.container);
-  
-  // Instructions text
-  // const instructionsText = new PIXI.Text("Player 1: A/D keys | Player 2: ←/→ keys", {
-  //   fontSize: 16,
-  //   fill: 0xFFFFFF
-  // });
-  // instructionsText.x = -170;
-  // instructionsText.y = 180;
-  // container.addChild(instructionsText);
 
   resize();
+  
+  // Start game timer
+  startGameTimer();
 
   app.ticker.add((ticker) => {
+    if (!gameActive) return;
+    
     // Update players
     player1.update(ticker.deltaMS * 0.001);
     player2.update(ticker.deltaMS * 0.001);
