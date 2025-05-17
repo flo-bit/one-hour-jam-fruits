@@ -39,14 +39,14 @@ export default class ParticleSystem {
     
     if (this.particlePool.length > 0) {
       particle = this.particlePool.pop()!;
-      particle.text = opts.emoji || "❤️"; // Update the text for reused particles
+      particle.text = opts.emoji ?? "❤️"; // Update the text for reused particles
     } else if (this.particles.length < this.maxParticles) {
       const textStyle = new PIXI.TextStyle({
-        fontSize: opts.size || 20,
-        fill: opts.color || 0xffffff,
+        fontSize: opts.size ?? 20,
+        fill: opts.color ?? 0xffffff,
       });
       
-      particle = new PIXI.Text(opts.emoji || "❤️", textStyle) as ParticleText;
+      particle = new PIXI.Text(opts.emoji ?? "❤️", textStyle) as ParticleText;
       particle.anchor.set(0.5, 0.5);
       this.container.addChild(particle);
     } else {
