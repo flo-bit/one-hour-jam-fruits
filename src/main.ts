@@ -41,18 +41,18 @@ function loadAudio() {
   
   // Background music
   backgroundMusic = new Audio();
-  backgroundMusic.src = `${baseUrl}jingle.m4a`;
+  backgroundMusic.src = `${baseUrl}jingle.ogg`;
   backgroundMusic.loop = true;
   backgroundMusic.volume = 0.5;
   
   // Point sound
   pointSound = new Audio();
-  pointSound.src = `${baseUrl}point.m4a`;
+  pointSound.src = `${baseUrl}point.ogg`;
   pointSound.volume = 0.7;
   
   // Fail sound
   failSound = new Audio();
-  failSound.src = `${baseUrl}fail.m4a`;
+  failSound.src = `${baseUrl}fail.ogg`;
   failSound.volume = 0.7;
   
   // Pre-load audio files
@@ -435,16 +435,16 @@ async function initializeGame() {
   // Create and position trees
   const trees = [];
   const treeCount = 15;
-  const treeWidth = 300; // Adjust based on your tree image size
+  const treeWidth = 350; // Adjust based on your tree image size
   const totalWidth = treeWidth * treeCount * 0.5;
   const startX = -totalWidth / 2;
   
   for (let i = 0; i < treeCount; i++) {
     const tree = new PIXI.Sprite(treeTexture);
     tree.width = treeWidth;
-    tree.height = 400; // Adjust based on your tree image size
+    tree.height = 500; // Adjust based on your tree image size
     tree.x = startX + i * treeWidth * 0.5;
-    tree.y = 200; // Position trees at ground level
+    tree.y = 280; // Position trees at ground level
     tree.anchor.set(0.5, 1); // Set anchor to bottom-center
     trees.push(tree);
     container.addChild(tree);
