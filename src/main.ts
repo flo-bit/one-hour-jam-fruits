@@ -20,6 +20,7 @@ let gameInitialized = false;
 let backgroundMusic: HTMLAudioElement;
 let pointSound: HTMLAudioElement;
 let failSound: HTMLAudioElement;
+let audioInitialized = false;
 
 // List of emojis to randomly use
 const fruitEmojis = ["🍎", "🍐", "🍊", "🍋"];
@@ -30,27 +31,81 @@ const player2Fruit = "🍊"; // Orange for player 2
 
 // Load audio files
 function loadAudio() {
+  // Only initialize once
+  if (audioInitialized) return;
+  
+  console.log("Loading audio files...");
+  
   // Background music
-  backgroundMusic = new Audio('jingle.m4a');
+  backgroundMusic = new Audio();
+  backgroundMusic.src = 'jingle.m4a';
   backgroundMusic.loop = true;
   backgroundMusic.volume = 0.5;
   
   // Point sound
-  pointSound = new Audio('point.m4a');
+  pointSound = new Audio();
+  pointSound.src = 'point.m4a';
   pointSound.volume = 0.7;
   
   // Fail sound
-  failSound = new Audio('fail.m4a');
+  failSound = new Audio();
+  failSound.src = 'fail.m4a';
   failSound.volume = 0.7;
+  
+  // Pre-load audio files
+  backgroundMusic.load();
+  pointSound.load();
+  failSound.load();
+  
+  audioInitialized = true;
+  
+  console.log("Audio loaded successfully");
 }
 
-// Play a sound effect
+// Play a sound effect with better error handling
 function playSound(sound: HTMLAudioElement) {
-  // Reset and play the sound
-  sound.currentTime = 0;
-  sound.play().catch(error => {
-    console.error("Audio playback error:", error);
+  if (!sound || !audioInitialized) return;
+  
+  // Create a clone to allow overlapping sounds
+  const soundClone = sound.cloneNode() as HTMLAudioElement;
+  
+  // Play the sound with error handling
+  const playPromise = soundClone.play();
+  
+  // Handle promise rejection (browsers may return a promise from play())
+  if (playPromise !== undefined) {
+    playPromise.catch(error => {
+      console.error("Audio playback error:", error);
+    });
+  }
+}
+
+// Test audio to ensure it's working
+function testAudio() {
+  console.log("Testing audio...");
+  
+  // Create a test button to manually play sound
+  const audioTestBtn = document.createElement('button');
+  audioTestBtn.textContent = 'Test Audio';
+  audioTestBtn.style.position = 'fixed';
+  audioTestBtn.style.bottom = '10px';
+  audioTestBtn.style.left = '10px';
+  audioTestBtn.style.zIndex = '999';
+  audioTestBtn.style.padding = '5px 10px';
+  
+  audioTestBtn.addEventListener('click', () => {
+    console.log("Playing audio test...");
+    if (pointSound) {
+      pointSound.currentTime = 0;
+      pointSound.play().catch(e => console.error("Point sound error:", e));
+    }
+    if (backgroundMusic) {
+      backgroundMusic.currentTime = 0;
+      backgroundMusic.play().catch(e => console.error("Music error:", e));
+    }
   });
+  
+  document.body.appendChild(audioTestBtn);
 }
 
 // Create the main menu
@@ -120,10 +175,14 @@ function createMainMenu() {
     // Hide menu
     menuContainer.style.display = 'none';
     
-    // Start background music
-    backgroundMusic.play().catch(error => {
-      console.error("Background music playback error:", error);
-    });
+    // Start background music - explicitly triggered by user action
+    console.log("Attempting to start background music...");
+    if (backgroundMusic) {
+      backgroundMusic.currentTime = 0;
+      backgroundMusic.play()
+        .then(() => console.log("Background music started successfully"))
+        .catch(error => console.error("Background music failed to start:", error));
+    }
     
     // Start game
     if (!gameInitialized) {
@@ -265,7 +324,9 @@ function endGame() {
   clearInterval(timerInterval);
   
   // Pause background music
-  backgroundMusic.pause();
+  if (backgroundMusic) {
+    backgroundMusic.pause();
+  }
   
   const winnerContainer = document.getElementById('winner-container');
   if (winnerContainer) {
@@ -302,10 +363,10 @@ function endGame() {
       resetGame();
       
       // Restart background music
-      backgroundMusic.currentTime = 0;
-      backgroundMusic.play().catch(error => {
-        console.error("Background music playback error:", error);
-      });
+      if (backgroundMusic) {
+        backgroundMusic.currentTime = 0;
+        backgroundMusic.play().catch(e => console.error("Failed to restart music:", e));
+      }
     });
     
     winnerContainer.appendChild(restartButton);
@@ -565,6 +626,9 @@ window.addEventListener('resize', resize);
 async function setup() {
   // Load audio files
   loadAudio();
+  
+  // Add test audio button
+  testAudio();
   
   // Create the main menu
   createMainMenu();
