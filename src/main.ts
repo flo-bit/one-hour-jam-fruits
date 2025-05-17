@@ -423,7 +423,7 @@ async function initializeGame() {
 
   // add background
   const background = new PIXI.Graphics();
-  background.rect(-350, -200, 700, 400).fill({ color: 0x515151, alpha: 1 });
+  background.rect(-350, -200, 700, 400).fill({ color: 0x8181f1, alpha: 1 });
   container.addChild(background);
   
   // Get the base URL for assets
