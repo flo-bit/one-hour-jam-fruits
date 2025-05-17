@@ -1,43 +1,16 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
+  // Disable type checking during build
   build: {
-    // This tells Vite to ignore TypeScript errors during build
+    // These settings help make Vite ignore TypeScript errors during build
     minify: true,
-    rollupOptions: {
-      onwarn(warning, warn) {
-        // Skip TypeScript validation errors
-        if (warning.code === 'TS6133' || warning.code?.startsWith('TS')) {
-          return;
-        }
-        warn(warning);
-      }
-    }
+    sourcemap: false,
+    reportCompressedSize: false
   },
   
-  // Disable type checking during dev and build
+  // Disable type checking overlay during development
   server: {
-    // Force vite to ignore TypeScript errors during development
-    hmr: { overlay: false },
-  },
-  
-  esbuild: {
-    // Skip type checking during build
-    logOverride: { 'this-is-undefined-in-esm': 'silent' },
-  },
-  
-  // Tell Vite not to use TypeScript for type checking
-  optimizeDeps: {
-    esbuildOptions: {
-      // Explicitly set to ignore TypeScript errors when optimizing dependencies
-      tsconfigRaw: {
-        compilerOptions: {
-          skipLibCheck: true,
-          skipDefaultLibCheck: true,
-          checkJs: false,
-          noEmit: true
-        }
-      }
-    }
+    hmr: { overlay: false }
   }
 }); 
