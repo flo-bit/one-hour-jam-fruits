@@ -23,7 +23,7 @@ export type ParticleOptions = {
 export default class ParticleSystem {
   private maxParticles: number;
   public container: PIXI.Container;
-  private particles: ParticleText[];
+  public particles: ParticleText[];
   private particlePool: ParticleText[];
 
   constructor(maxParticles: number = 10000) {
