@@ -11,7 +11,7 @@ let score1 = 0;
 let score2 = 0;
 
 // Game state
-let gameTime = 10; // 10 seconds game duration
+let gameTime = 60; // 10 seconds game duration
 let gameActive = false;
 let timerInterval: number;
 let gameInitialized = false;
