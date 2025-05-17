@@ -32,9 +32,10 @@ export default defineConfig({
       // Explicitly set to ignore TypeScript errors when optimizing dependencies
       tsconfigRaw: {
         compilerOptions: {
-          ignoreDeprecations: "5.0",
           skipLibCheck: true,
           skipDefaultLibCheck: true,
+          checkJs: false,
+          noEmit: true
         }
       }
     }
