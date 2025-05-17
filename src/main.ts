@@ -89,6 +89,27 @@ async function setup() {
   const background = new PIXI.Graphics();
   background.rect(-350, -200, 700, 400).fill({ color: 0x515151, alpha: 1 });
   container.addChild(background);
+  
+  // Load tree texture
+  const treeTexture = await PIXI.Assets.load('tree.png');
+  
+  // Create and position trees
+  const trees = [];
+  const treeCount = 15;
+  const treeWidth = 300; // Adjust based on your tree image size
+  const totalWidth = treeWidth * treeCount * 0.5;
+  const startX = -totalWidth / 2;
+  
+  for (let i = 0; i < treeCount; i++) {
+    const tree = new PIXI.Sprite(treeTexture);
+    tree.width = treeWidth;
+    tree.height = 400; // Adjust based on your tree image size
+    tree.x = startX + i * treeWidth * 0.5;
+    tree.y = 200; // Position trees at ground level
+    tree.anchor.set(0.5, 1); // Set anchor to bottom-center
+    trees.push(tree);
+    container.addChild(tree);
+  }
 
   // Create the particle system
   particles = new ParticleSystem(1000);
@@ -145,13 +166,13 @@ async function setup() {
   container.addChild(player2.container);
   
   // Instructions text
-  const instructionsText = new PIXI.Text("Player 1: A/D keys | Player 2: ←/→ keys", {
-    fontSize: 16,
-    fill: 0xFFFFFF
-  });
-  instructionsText.x = -170;
-  instructionsText.y = 180;
-  container.addChild(instructionsText);
+  // const instructionsText = new PIXI.Text("Player 1: A/D keys | Player 2: ←/→ keys", {
+  //   fontSize: 16,
+  //   fill: 0xFFFFFF
+  // });
+  // instructionsText.x = -170;
+  // instructionsText.y = 180;
+  // container.addChild(instructionsText);
 
   resize();
 
