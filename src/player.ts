@@ -5,7 +5,11 @@ export interface PlayerOptions {
   y: number;
   speed: number;
   width: number;
-  emoji: string;
+  playerImages: {
+    left: PIXI.Texture;
+    front: PIXI.Texture;
+    right: PIXI.Texture;
+  };
   basketEmoji: string;
   color: number;
   controls: {
@@ -16,13 +20,19 @@ export interface PlayerOptions {
 
 export class Player {
   public container: PIXI.Container;
-  private character: PIXI.Text;
-  private basket: PIXI.Text;
+  private character: PIXI.Sprite;
+  private basket: PIXI.Graphics;
   private speed: number;
   private bounds: { left: number; right: number };
   private width: number;
   private keys: { [key: string]: boolean } = {};
   private controls: { left: string; right: string };
+  private textures: {
+    left: PIXI.Texture;
+    front: PIXI.Texture;
+    right: PIXI.Texture;
+  };
+  private lastDirection: 'left' | 'front' | 'right' = 'front';
   
   constructor(options: PlayerOptions) {
     this.container = new PIXI.Container();
@@ -36,16 +46,16 @@ export class Player {
       right: 350 - options.width
     };
     
-    // Create character
-    const characterStyle = new PIXI.TextStyle({
-      fontSize: 40,
-      fill: options.color
-    });
+    // Store textures
+    this.textures = options.playerImages;
     
-    this.character = new PIXI.Text(options.emoji, characterStyle);
+    // Create character sprite
+    this.character = new PIXI.Sprite(this.textures.front);
     this.character.anchor.set(0.5, 1);
     this.character.x = 0;
     this.character.y = 0;
+    this.character.width = options.width;
+    this.character.height = options.width / 0.51; // Adjust height based on width to maintain proportion
     
     // Create basket
     const basketStyle = new PIXI.TextStyle({
@@ -53,11 +63,12 @@ export class Player {
       fill: options.color
     });
     
-    this.basket = new PIXI.Text(options.basketEmoji, basketStyle);
-    this.basket.anchor.set(0.5, 0);
-    this.basket.x = 0;
-    this.basket.y = 10;
+    this.basket = new PIXI.Graphics();
+    this.basket.rect(-20, -10, 40, 20).fill({ color: options.color, alpha: 1 });
     
+    this.basket.visible = false;
+    this.basket.y = -70;
+
     // Add to container
     this.container.addChild(this.character);
     this.container.addChild(this.basket);
@@ -81,13 +92,31 @@ export class Player {
   }
   
   public update(deltaTime: number): void {
+    let isMoving = false;
+    let direction: 'left' | 'front' | 'right' = 'front';
+    
     // Handle movement
     if (this.keys[this.controls.left]) {
       this.container.x -= this.speed * deltaTime;
+      direction = 'left';
+      isMoving = true;
     }
     
     if (this.keys[this.controls.right]) {
       this.container.x += this.speed * deltaTime;
+      direction = 'right';
+      isMoving = true;
+    }
+    
+    // If not moving, use front texture
+    if (!isMoving) {
+      direction = 'front';
+    }
+    
+    // Update sprite texture if direction changed
+    if (direction !== this.lastDirection) {
+      this.character.texture = this.textures[direction];
+      this.lastDirection = direction;
     }
     
     // Clamp to boundaries
@@ -105,8 +134,8 @@ export class Player {
     const basketBounds = {
       left: this.container.x - this.basket.width / 2,
       right: this.container.x + this.basket.width / 2,
-      top: this.container.y + this.basket.y,
-      bottom: this.container.y + this.basket.y + this.basket.height
+      top: this.container.y + this.basket.y - this.basket.height / 2,
+      bottom: this.container.y + this.basket.y + this.basket.height / 2
     };
     
     // Check if fruit is within basket bounds

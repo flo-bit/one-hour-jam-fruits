@@ -1,6 +1,6 @@
 import * as PIXI from "pixi.js";
 
-interface ParticleText extends PIXI.Text {
+interface Particle extends PIXI.Sprite {
   speedX: number;
   speedY: number;
   age: number;
@@ -17,14 +17,14 @@ export type ParticleOptions = {
   speedX: number;
   speedY: number;
   maxAge: number;
-  emoji: string;
+  texture: PIXI.Texture;
 };
 
 export default class ParticleSystem {
   private maxParticles: number;
   public container: PIXI.Container;
-  public particles: ParticleText[];
-  private particlePool: ParticleText[];
+  public particles: Particle[];
+  private particlePool: Particle[];
 
   constructor(maxParticles: number = 10000) {
     this.maxParticles = maxParticles;
@@ -34,19 +34,17 @@ export default class ParticleSystem {
     this.particlePool = [];
   }
 
-  spawnParticle(opts: Partial<ParticleOptions>): ParticleText | null {
-    let particle: ParticleText;
+  spawnParticle(opts: Partial<ParticleOptions>): Particle | null {
+    let particle: Particle;
     
     if (this.particlePool.length > 0) {
       particle = this.particlePool.pop()!;
-      particle.text = opts.emoji ?? "❤️"; // Update the text for reused particles
+      if (opts.texture) {
+        particle.texture = opts.texture;
+      }
     } else if (this.particles.length < this.maxParticles) {
-      const textStyle = new PIXI.TextStyle({
-        fontSize: opts.size ?? 20,
-        fill: opts.color ?? 0xffffff,
-      });
-      
-      particle = new PIXI.Text(opts.emoji ?? "❤️", textStyle) as ParticleText;
+      const texture = opts.texture || PIXI.Texture.WHITE;
+      particle = new PIXI.Sprite(texture) as Particle;
       particle.anchor.set(0.5, 0.5);
       this.container.addChild(particle);
     } else {
@@ -57,20 +55,33 @@ export default class ParticleSystem {
     particle.visible = true;
     particle.x = opts.x ?? 0;
     particle.y = opts.y ?? 0;
-    particle.scale.set((opts.size ?? 20) / particle.width);
+    
+    // Apply color tint if provided
+    if (opts.color) {
+      particle.tint = typeof opts.color === 'number' ? opts.color : 0xFFFFFF;
+    } else {
+      particle.tint = 0xFFFFFF;
+    }
+    
+    const size = opts.size ?? 20;
+    particle.scale.set(0.0);
     particle.alpha = opts.alpha ?? 1;
     particle.speedX = opts.speedX ?? 0;
     particle.speedY = opts.speedY ?? 0;
     particle.age = 0;
-    particle.maxAge = opts.maxAge ?? 1;
-    particle.initialSize = opts.size ?? 20;
+    particle.maxAge = 100;
+    particle.initialSize = 0.0;
+    particle.maxScale = 0.05;
+    particle.scaleSpeed = 0.1;
+    particle.rotation = (Math.random() - 0.5) * 0.5;
+    particle.rotationSpeed = (Math.random() - 0.5);
 
     this.particles.push(particle);
 
     return particle;
   }
 
-  removeParticle(particle: ParticleText): void {
+  removeParticle(particle: Particle): void {
     const index = this.particles.indexOf(particle);
     if (index !== -1) {
       particle.visible = false;
@@ -83,11 +94,18 @@ export default class ParticleSystem {
   update(deltaTime: number): void {
     for (let i = this.particles.length - 1; i >= 0; i--) {
       const particle = this.particles[i];
+      if(particle.scale.x < particle.maxScale) {
+        particle.scale.x += particle.scaleSpeed * deltaTime;
+        particle.scale.y += particle.scaleSpeed * deltaTime;
+        continue;
+      }
       particle.x += particle.speedX * deltaTime;
       particle.y += particle.speedY * deltaTime;
       particle.age += deltaTime;
 
-      if(particle.y > 400) {
+      particle.rotation += deltaTime * particle.rotationSpeed * 5
+
+      if(particle.y > 400 || particle.age > particle.maxAge) {
         this.removeParticle(particle);
       }
     }

@@ -22,12 +22,24 @@ let pointSound: HTMLAudioElement;
 let failSound: HTMLAudioElement;
 let audioInitialized = false;
 
-// List of emojis to randomly use
-const fruitEmojis = ["🍎", "🍐", "🍊", "🍋"];
+// Fruit textures
+let fruitTextures: PIXI.Texture[] = [];
+let celebrationTextures: {
+  positive: PIXI.Texture;
+  negative: PIXI.Texture;
+} = {
+  positive: null as unknown as PIXI.Texture,
+  negative: null as unknown as PIXI.Texture
+};
 
 // Assign specific fruits to each player
-const player1Fruit = "🍎"; // Red apple for player 1
-const player2Fruit = "🍊"; // Orange for player 2
+const APPLE_INDEX = 0;
+const ORANGE_INDEX = 1;
+const player1FruitIndex = APPLE_INDEX; // Apple for player 1
+const player2FruitIndex = ORANGE_INDEX; // Orange for player 2
+
+// List of emojis for display purposes
+const fruitEmojis = ["🍎", "🍊", "🍋", "🍐"];
 
 // Load audio files
 function loadAudio() {
@@ -145,8 +157,8 @@ function createMainMenu() {
   subtitle.style.maxWidth = '600px';
   subtitle.style.lineHeight = '1.5';
   subtitle.innerHTML = `
-    <div><span style="color:#FF5555;">Player 1:</span> Use A/D keys to catch ${player1Fruit}</div>
-    <div><span style="color:#FFFF55;">Player 2:</span> Use Arrow keys to catch ${player2Fruit}</div>
+    <div><span style="color:#FF5555;">Player 1:</span> Use A/D keys to catch ${fruitEmojis[player1FruitIndex]}</div>
+    <div><span style="color:#FFFF55;">Player 2:</span> Use Arrow keys to catch ${fruitEmojis[player2FruitIndex]}</div>
     <div style="margin-top:10px;">Catch your fruit for +1 point, other fruits -1 point!</div>
   `;
   
@@ -305,7 +317,7 @@ function resetGame() {
   updateScores();
   
   // Reset timer
-  gameTime = 10;
+  gameTime = 60;
   updateTimer();
   
   // Reposition players
@@ -423,14 +435,47 @@ async function initializeGame() {
 
   // add background
   const background = new PIXI.Graphics();
-  background.rect(-350, -200, 700, 400).fill({ color: 0x8181f1, alpha: 1 });
+  background.rect(-350, -200, 700, 400).fill({ color: 0xffffff, alpha: 1 });
   container.addChild(background);
+
+  // set background as mask
+  container.mask = background;
   
   // Get the base URL for assets
   const baseUrl = import.meta.env.BASE_URL || '/';
   
-  // Load tree texture
+  // Load textures
   const treeTexture = await PIXI.Assets.load(`${baseUrl}tree.png`);
+  
+  // Load fruit textures - currently we don't have separate images, so we'll use heart.png for now
+  // In a real game, you'd create or download custom fruit images
+  const appleTexture = await PIXI.Assets.load(`${baseUrl}apple.png`);
+  const orangeTexture = await PIXI.Assets.load(`${baseUrl}orange.png`);
+  const bananaTexture = await PIXI.Assets.load(`${baseUrl}banana.png`);
+  const strawberryTexture = await PIXI.Assets.load(`${baseUrl}strawberry.png`);
+  
+  // Load player images
+  const player1LeftTexture = await PIXI.Assets.load(`${baseUrl}player1/girl_left.png`);
+  const player1FrontTexture = await PIXI.Assets.load(`${baseUrl}player1/girl_front.png`);
+  const player1RightTexture = await PIXI.Assets.load(`${baseUrl}player1/girl_right.png`);
+  
+  const player2LeftTexture = await PIXI.Assets.load(`${baseUrl}player2/boy_left.png`);
+  const player2FrontTexture = await PIXI.Assets.load(`${baseUrl}player2/boy_front.png`);
+  const player2RightTexture = await PIXI.Assets.load(`${baseUrl}player2/boy_right.png`);
+  
+  // Create fruit textures array
+  fruitTextures = [
+    appleTexture, // Apple (red)
+    orangeTexture, // Orange
+    bananaTexture, // Lemon (yellow)
+    strawberryTexture  // Pear (green)
+  ];
+  
+  // Set tints when creating sprites - we can't tint textures directly
+  
+  // Load celebration textures
+  celebrationTextures.positive = appleTexture;
+  celebrationTextures.negative = appleTexture;
   
   // Create and position trees
   const trees = [];
@@ -457,10 +502,14 @@ async function initializeGame() {
   // Create player 1
   player1 = new Player({
     x: -150,
-    y: 150, // Place near bottom of screen
+    y: 200, // Place near bottom of screen
     speed: 200,
     width: 40,
-    emoji: "👨‍🌾",
+    playerImages: {
+      left: player1LeftTexture,
+      front: player1FrontTexture,
+      right: player1RightTexture
+    },
     basketEmoji: "🧺",
     color: 0xFF5555, // Reddish color
     controls: {
@@ -472,10 +521,14 @@ async function initializeGame() {
   // Create player 2
   player2 = new Player({
     x: 150,
-    y: 150, // Place near bottom of screen
+    y: 200, // Place near bottom of screen
     speed: 200,
     width: 40,
-    emoji: "👩‍🌾",
+    playerImages: {
+      left: player2LeftTexture,
+      front: player2FrontTexture,
+      right: player2RightTexture
+    },
     basketEmoji: "🧺",
     color: 0xFFFF55, // Yellowish color
     controls: {
@@ -485,7 +538,7 @@ async function initializeGame() {
   });
   
   // Add target fruit indicators next to players
-  const player1FruitText = new PIXI.Text(player1Fruit, {
+  const player1FruitText = new PIXI.Text(fruitEmojis[player1FruitIndex], {
     fontSize: 24
   });
   player1FruitText.anchor.set(0.5);
@@ -493,7 +546,7 @@ async function initializeGame() {
   player1FruitText.y = -20;
   player1.container.addChild(player1FruitText);
   
-  const player2FruitText = new PIXI.Text(player2Fruit, {
+  const player2FruitText = new PIXI.Text(fruitEmojis[player2FruitIndex], {
     fontSize: 24
   });
   player2FruitText.anchor.set(0.5);
@@ -520,43 +573,44 @@ async function initializeGame() {
     particles.update(ticker.deltaMS * 0.001);
 
     // Spawn fruits
-    if(Math.random() < 0.05) {
-      // Get a random emoji from our list
-      const randomEmoji = fruitEmojis[Math.floor(Math.random() * fruitEmojis.length)];
+    if(Math.random() < ticker.deltaMS * 0.001) {
+      // Get a random fruit texture index
+      const randomIndex = Math.floor(Math.random() * fruitTextures.length);
+      const randomTexture = fruitTextures[randomIndex];
       
       const particle = particles.spawnParticle({
         x: Math.random() * 700 - 350,
-        y: -200,
+        y: -200 + Math.random() * 80,
         size: 20,
         speedX: Math.random() * 50 - 25,
-        speedY: 100 + Math.random() * 50,
-        emoji: randomEmoji
+        speedY: 80 + Math.random() * 30,
+        texture: randomTexture
       });
       
       if (particle) {
         // Store the original info in the particle for collision detection
         (particle as any).fruitData = {
-          emoji: randomEmoji,
+          fruitIndex: randomIndex,
           size: 20
         };
       }
     }
     
     // Check for collisions with fruits for player 1
-    checkPlayerFruitCollisions(player1, 1, player1Fruit);
+    checkPlayerFruitCollisions(player1, 1, player1FruitIndex);
     
     // Check for collisions with fruits for player 2
-    checkPlayerFruitCollisions(player2, 2, player2Fruit);
+    checkPlayerFruitCollisions(player2, 2, player2FruitIndex);
   });
 }
 
-function checkPlayerFruitCollisions(player: Player, playerNumber: number, targetFruit: string) {
-  for (const element of particles.particles) {
-    const particle = element as any;
+function checkPlayerFruitCollisions(player: Player, playerNumber: number, targetFruitIndex: number) {
+  for (let i = particles.particles.length - 1; i >= 0; i--) {
+    const particle = particles.particles[i] as any;
     if (particle?.fruitData) {
       if (player.checkFruitCollision(particle.x, particle.y, particle.fruitData.size)) {
         // Determine if it's the player's target fruit
-        const isTargetFruit = particle.fruitData.emoji === targetFruit;
+        const isTargetFruit = particle.fruitData.fruitIndex === targetFruitIndex;
         
         // Update score
         if (isTargetFruit) {
@@ -569,9 +623,6 @@ function checkPlayerFruitCollisions(player: Player, playerNumber: number, target
           
           // Play point sound
           playSound(pointSound);
-          
-          // Create a positive celebration effect
-          createCelebrationEffect(particle.x, particle.y, 0x00FF00, "✨");
         } else {
           // Decrease score for catching wrong fruit
           if (playerNumber === 1) {
@@ -582,9 +633,8 @@ function checkPlayerFruitCollisions(player: Player, playerNumber: number, target
           
           // Play fail sound
           playSound(failSound);
-          
-          // Create a negative effect
-          createCelebrationEffect(particle.x, particle.y, 0xFF0000, "❌");
+        
+          console.log('player', playerNumber, 'caught fruit', particle.fruitData.fruitIndex, 'score', score1, score2);
         }
         
         // Update HTML score display
@@ -595,22 +645,6 @@ function checkPlayerFruitCollisions(player: Player, playerNumber: number, target
         break; // Break after handling one collision
       }
     }
-  }
-}
-
-function createCelebrationEffect(x: number, y: number, color: number, emoji: string) {
-  for (let j = 0; j < 3; j++) {
-    particles.spawnParticle({
-      x: x,
-      y: y,
-      size: 15,
-      color: color,
-      alpha: 1,
-      speedX: Math.random() * 50 - 25,
-      speedY: Math.random() * -50 - 50,
-      emoji: emoji,
-      maxAge: 0.5
-    });
   }
 }
 
