@@ -148,7 +148,7 @@ function createMainMenu() {
   title.style.marginBottom = '20px';
   title.style.fontFamily = 'Arial, sans-serif';
   
-  // Create subtitle
+  // Create subtitle with HTML instructions
   const subtitle = document.createElement('div');
   subtitle.style.color = '#FFFFFF';
   subtitle.style.fontSize = '24px';
@@ -156,9 +156,14 @@ function createMainMenu() {
   subtitle.style.textAlign = 'center';
   subtitle.style.maxWidth = '600px';
   subtitle.style.lineHeight = '1.5';
+  
+  // Get the base URL for fruit images
+  const baseUrl = import.meta.env.BASE_URL || '/';
+  
+  // Create subtitle content
   subtitle.innerHTML = `
-    <div><span style="color:#FF5555;">Player 1:</span> Use A/D keys to catch ${fruitEmojis[player1FruitIndex]}</div>
-    <div><span style="color:#FFFF55;">Player 2:</span> Use Arrow keys to catch ${fruitEmojis[player2FruitIndex]}</div>
+    <div><span style="color:#FF5555;">Player 1:</span> Use A/D keys to catch <img src="${baseUrl}apple.png" style="width:24px; height:24px; vertical-align:middle;"></div>
+    <div><span style="color:#FFFF55;">Player 2:</span> Use Arrow keys to catch <img src="${baseUrl}orange.png" style="width:24px; height:24px; vertical-align:middle;"></div>
     <div style="margin-top:10px;">Catch your fruit for +1 point, other fruits -1 point!</div>
   `;
   
@@ -348,10 +353,10 @@ function endGame() {
     let message;
     
     if (score1 > score2) {
-      message = 'Player 1 Wins! 🎉';
+      message = 'Player 1 Wins!';
       winnerContainer.style.color = '#FF5555';
     } else if (score2 > score1) {
-      message = 'Player 2 Wins! 🎉';
+      message = 'Player 2 Wins!';
       winnerContainer.style.color = '#FFFF55';
     } else {
       message = "It's a Tie!";
@@ -537,25 +542,25 @@ async function initializeGame() {
     }
   });
   
-  // Add target fruit indicators next to players
-  const player1FruitText = new PIXI.Text(fruitEmojis[player1FruitIndex], {
-    fontSize: 24
-  });
-  player1FruitText.anchor.set(0.5);
-  player1FruitText.x = -30;
-  player1FruitText.y = -20;
-  player1.container.addChild(player1FruitText);
-  
-  const player2FruitText = new PIXI.Text(fruitEmojis[player2FruitIndex], {
-    fontSize: 24
-  });
-  player2FruitText.anchor.set(0.5);
-  player2FruitText.x = -30;
-  player2FruitText.y = -20;
-  player2.container.addChild(player2FruitText);
-  
   container.addChild(player1.container);
   container.addChild(player2.container);
+
+  // Add target fruit indicators next to players - replace emojis with actual fruit images
+  const player1FruitIndicator = new PIXI.Sprite(fruitTextures[player1FruitIndex]);
+  player1FruitIndicator.anchor.set(0.5);
+  player1FruitIndicator.x = -30;
+  player1FruitIndicator.y = -20;
+  player1FruitIndicator.width = 20;
+  player1FruitIndicator.height = 20;
+  player1.container.addChild(player1FruitIndicator);
+  
+  const player2FruitIndicator = new PIXI.Sprite(fruitTextures[player2FruitIndex]);
+  player2FruitIndicator.anchor.set(0.5);
+  player2FruitIndicator.x = -30;
+  player2FruitIndicator.y = -20;
+  player2FruitIndicator.width = 20;
+  player2FruitIndicator.height = 20;
+  player2.container.addChild(player2FruitIndicator);
 
   resize();
   
