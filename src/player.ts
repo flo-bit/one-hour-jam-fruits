@@ -10,7 +10,6 @@ export interface PlayerOptions {
     front: PIXI.Texture;
     right: PIXI.Texture;
   };
-  basketEmoji: string;
   color: number;
   controls: {
     left: string;
@@ -56,13 +55,7 @@ export class Player {
     this.character.y = 0;
     this.character.width = options.width;
     this.character.height = options.width / 0.51; // Adjust height based on width to maintain proportion
-    
-    // Create basket
-    const basketStyle = new PIXI.TextStyle({
-      fontSize: 30,
-      fill: options.color
-    });
-    
+
     this.basket = new PIXI.Graphics();
     this.basket.rect(-20, -10, 40, 20).fill({ color: options.color, alpha: 1 });
     

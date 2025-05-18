@@ -5,6 +5,12 @@ import { Player } from './player';
 let app: PIXI.Application;
 let container: PIXI.Container;
 let particles: ParticleSystem;
+
+let plusParticles: ParticleSystem;
+let minusParticles: ParticleSystem;
+let plusTexture: PIXI.Texture;
+let minusTexture: PIXI.Texture;
+
 let player1: Player;
 let player2: Player;
 let score1 = 0;
@@ -438,19 +444,11 @@ async function initializeGame() {
   // Add the container to the stage
   app.stage.addChild(container);
 
-  // add background
-  const background = new PIXI.Graphics();
-  background.rect(-350, -200, 700, 400).fill({ color: 0xffffff, alpha: 1 });
-  container.addChild(background);
-
-  // set background as mask
-  container.mask = background;
-  
   // Get the base URL for assets
   const baseUrl = import.meta.env.BASE_URL || '/';
   
-  // Load textures
-  const treeTexture = await PIXI.Assets.load(`${baseUrl}tree.png`);
+  // Load background image
+  const backgroundTexture = await PIXI.Assets.load(`${baseUrl}background.png`);
   
   // Load fruit textures - currently we don't have separate images, so we'll use heart.png for now
   // In a real game, you'd create or download custom fruit images
@@ -458,7 +456,10 @@ async function initializeGame() {
   const orangeTexture = await PIXI.Assets.load(`${baseUrl}orange.png`);
   const bananaTexture = await PIXI.Assets.load(`${baseUrl}banana.png`);
   const strawberryTexture = await PIXI.Assets.load(`${baseUrl}strawberry.png`);
-  
+
+  const plusTexture = await PIXI.Assets.load(`${baseUrl}plusOne.png`);
+  const minusTexture = await PIXI.Assets.load(`${baseUrl}minusOne.png`);
+
   // Load player images
   const player1LeftTexture = await PIXI.Assets.load(`${baseUrl}player1/girl_left.png`);
   const player1FrontTexture = await PIXI.Assets.load(`${baseUrl}player1/girl_front.png`);
@@ -482,32 +483,34 @@ async function initializeGame() {
   celebrationTextures.positive = appleTexture;
   celebrationTextures.negative = appleTexture;
   
-  // Create and position trees
-  const trees = [];
-  const treeCount = 15;
-  const treeWidth = 350; // Adjust based on your tree image size
-  const totalWidth = treeWidth * treeCount * 0.5;
-  const startX = -totalWidth / 2;
-  
-  for (let i = 0; i < treeCount; i++) {
-    const tree = new PIXI.Sprite(treeTexture);
-    tree.width = treeWidth;
-    tree.height = 500; // Adjust based on your tree image size
-    tree.x = startX + i * treeWidth * 0.5;
-    tree.y = 280; // Position trees at ground level
-    tree.anchor.set(0.5, 1); // Set anchor to bottom-center
-    trees.push(tree);
-    container.addChild(tree);
-  }
+  // Create and add full background
+  const backgroundSprite = new PIXI.Sprite(backgroundTexture);
+  backgroundSprite.width = 700;
+  backgroundSprite.height = 400;
+  backgroundSprite.x = -350;
+  backgroundSprite.y = -200;
+  container.addChild(backgroundSprite);
+
+  // Create mask for container
+  const mask = new PIXI.Graphics();
+  mask.rect(-350, -200, 700, 400).fill({ color: 0xffffff, alpha: 1 });
+  container.addChild(mask);
+  container.mask = mask;
 
   // Create the particle system
-  particles = new ParticleSystem(1000);
+  particles = new ParticleSystem(500);
   container.addChild(particles.container);
+
+  plusParticles = new ParticleSystem(500);
+  container.addChild(plusParticles.container);
+
+  minusParticles = new ParticleSystem(500);
+  container.addChild(minusParticles.container);
 
   // Create player 1
   player1 = new Player({
     x: -150,
-    y: 200, // Place near bottom of screen
+    y: 180, // Place near bottom of screen
     speed: 200,
     width: 40,
     playerImages: {
@@ -515,7 +518,6 @@ async function initializeGame() {
       front: player1FrontTexture,
       right: player1RightTexture
     },
-    basketEmoji: "🧺",
     color: 0xFF5555, // Reddish color
     controls: {
       left: "a",
@@ -526,7 +528,7 @@ async function initializeGame() {
   // Create player 2
   player2 = new Player({
     x: 150,
-    y: 200, // Place near bottom of screen
+    y: 180, // Place near bottom of screen
     speed: 200,
     width: 40,
     playerImages: {
@@ -534,7 +536,6 @@ async function initializeGame() {
       front: player2FrontTexture,
       right: player2RightTexture
     },
-    basketEmoji: "🧺",
     color: 0xFFFF55, // Yellowish color
     controls: {
       left: "arrowleft",
@@ -544,6 +545,9 @@ async function initializeGame() {
   
   container.addChild(player1.container);
   container.addChild(player2.container);
+
+  container.addChild(plusParticles.container);
+  container.addChild(minusParticles.container);
 
   // Add target fruit indicators next to players - replace emojis with actual fruit images
   const player1FruitIndicator = new PIXI.Sprite(fruitTextures[player1FruitIndex]);
@@ -576,6 +580,8 @@ async function initializeGame() {
     
     // Update particles
     particles.update(ticker.deltaMS * 0.001);
+    plusParticles.update(ticker.deltaMS * 0.001);
+    minusParticles.update(ticker.deltaMS * 0.001);
 
     // Spawn fruits
     if(Math.random() < ticker.deltaMS * 0.001) {
@@ -585,10 +591,9 @@ async function initializeGame() {
       
       const particle = particles.spawnParticle({
         x: Math.random() * 700 - 350,
-        y: -200 + Math.random() * 80,
-        size: 20,
+        y: -100 + Math.random() * 80,
         speedX: Math.random() * 50 - 25,
-        speedY: 80 + Math.random() * 30,
+        speedY: 50 + Math.random() * 20,
         texture: randomTexture
       });
       
@@ -600,6 +605,10 @@ async function initializeGame() {
         };
       }
     }
+
+    spawnPlusParticle(player1.container.x, 400, plusTexture);
+    spawnMinusParticle(player2.container.x, 400, minusTexture);
+
     
     // Check for collisions with fruits for player 1
     checkPlayerFruitCollisions(player1, 1, player1FruitIndex);
@@ -628,6 +637,8 @@ function checkPlayerFruitCollisions(player: Player, playerNumber: number, target
           
           // Play point sound
           playSound(pointSound);
+
+          spawnPlusParticle(particle.x, particle.y, plusTexture);
         } else {
           // Decrease score for catching wrong fruit
           if (playerNumber === 1) {
@@ -638,7 +649,8 @@ function checkPlayerFruitCollisions(player: Player, playerNumber: number, target
           
           // Play fail sound
           playSound(failSound);
-        
+          spawnMinusParticle(particle.x, particle.y, minusTexture);
+
           console.log('player', playerNumber, 'caught fruit', particle.fruitData.fruitIndex, 'score', score1, score2);
         }
         
@@ -652,6 +664,37 @@ function checkPlayerFruitCollisions(player: Player, playerNumber: number, target
     }
   }
 }
+
+function spawnPlusParticle(x: number, y: number, texture: PIXI.Texture) {
+  plusParticles.spawnParticle({
+    x,
+    y,
+    size: 0.05,
+    texture,
+    alpha: 1,
+    speedX: 0,
+    speedY: -50,
+    maxAge: 1,
+    rotation: 0,
+    rotationSpeed: 0
+  });
+}
+
+function spawnMinusParticle(x: number, y: number, texture: PIXI.Texture) {
+  minusParticles.spawnParticle({
+    x,
+    y,
+    size: 0.05,
+    texture,
+    alpha: 1,
+    speedX: 0,
+    speedY: -50,
+    maxAge: 1,
+    rotation: 0,
+    rotationSpeed: 0
+  });
+}
+
 
 // Function to handle window resize
 function resize() {

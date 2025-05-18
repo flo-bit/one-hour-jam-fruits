@@ -43,6 +43,7 @@ export default class ParticleSystem {
         particle.texture = opts.texture;
       }
     } else if (this.particles.length < this.maxParticles) {
+      console.log('spawnParticle', opts);
       const texture = opts.texture || PIXI.Texture.WHITE;
       particle = new PIXI.Sprite(texture) as Particle;
       particle.anchor.set(0.5, 0.5);
@@ -63,18 +64,17 @@ export default class ParticleSystem {
       particle.tint = 0xFFFFFF;
     }
     
-    const size = opts.size ?? 20;
-    particle.scale.set(0.0);
+    if(opts.size) particle.scale.set(opts.size);
+    else particle.scale.set(0.0);
     particle.alpha = opts.alpha ?? 1;
     particle.speedX = opts.speedX ?? 0;
     particle.speedY = opts.speedY ?? 0;
     particle.age = 0;
-    particle.maxAge = 100;
-    particle.initialSize = 0.0;
+    particle.maxAge = opts.maxAge ?? 100;
     particle.maxScale = 0.05;
     particle.scaleSpeed = 0.1;
-    particle.rotation = (Math.random() - 0.5) * 0.5;
-    particle.rotationSpeed = (Math.random() - 0.5);
+    particle.rotation = opts.rotation ?? (Math.random() - 0.5) * 0.5;
+    particle.rotationSpeed = opts.rotationSpeed ?? (Math.random() - 0.5);
 
     this.particles.push(particle);
 
